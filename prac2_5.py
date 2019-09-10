@@ -9,7 +9,7 @@ def initialBell(x):
 def main():
     #setup space, initial phi profile and Courant number
     nx = 40 #number of points in space
-    nt = 400 #number of time steps - MODIFIED
+    nt = 40 #number of time steps - MODIFIED
     c = 0.20 # The Courant number
     #spatial variable going from zero to one inclusive
     x = np.linspace(0.0,1.0,nx+1)
@@ -17,7 +17,7 @@ def main():
     phi_ftcs = initialBell(x)
     phi_ftbs = initialBell(x)
     phi_ctcs = initialBell(x)
-    #phiNew = phi.copy()
+    phiNew_ctcs = phi_ctcs.copy()
     phiOld_ftcs = phi_ftcs.copy()
     phiOld_ftbs = phi_ftbs.copy()
     phiOld_ctcs = phi_ctcs.copy()
@@ -36,29 +36,34 @@ def main():
     #FTBS for all time steps, looping over space
     for i in range(1,nt):
         for j in  range(1,nx):
-            phi_ftbs[j] = phiOld_ftcs[j] -c*(phiOld_ftcs[j+1] - phiOld[j-1])
+            phi_ftbs[j] = phiOld_ftcs[j] -c*(phiOld_ftcs[j+1] - phiOld_ftcs[j-1])
         #apply periodic boundary conditions
         phi_ftcs[0] = phiOld_ftcs[0] - c*(phiOld_ftcs[1] - phiOld_ftcs[nx-1])
         phi_ftcs[nx] = phi_ftcs[0]
         #update phi for the next time-step
         phiOld_ftcs = phi_ftcs.copy()
         
-        
-        
-
-    #Loop over remaining time steps (nt) using CTCS
+    #CTCS for the first time step, looping over space
+    for j in  range(1,nx):
+        phi_ctcs[j] = phiOld_ctcs[j] - 0.5*c*(phiOld_ctcs[j+1] - phiOld_ctcs[j-1])
+    #apply periodic boundary conditions
+    phi_ctcs[0] = phiOld_ctcs[0] - 0.5*c*(phiOld_ctcs[1] - phiOld_ctcs[nx-1])
+    phi_ctcs[nx] = phi_ctcs[0]
+    #update phi for the next time-step
+    phiOld_ctcs = phi_ctcs.copy()
     
-    #nt = 40
-    #for n in range (1,nt):
+    #Loop over remaining time steps (nt) using CTCS
+    nt_ctcs = 40
+    for n in range (1,nt_ctcs):
         #loop over space
-        #for j in range (1,nx):
-            #phiNew[j] = phiOld[j] - 0.5*c*(phi[j+1] - phiOld[j-1])
+        for j in range (1,nx):
+            phiNew_ctcs[j] = phiOld_ctcs[j] - 0.5*c*(phi_ctcs[j+1] - phiOld_ctcs[j-1])
         #apply periodic boundary conditions
-        #phiNew[0] = phiOld[0] - c*(phi[1] - phi[nx-1])
-        #phiNew[nx] = phiNew[0]
+        phiNew_ctcs[0] = phiOld_ctcs[0] - c*(phi_ctcs[1] - phi_ctcs[nx-1])
+        phiNew_ctcs[nx] = phiNew_ctcs[0]
         #update phi for the next time-step
-        #phiOld = phi.copy()
-        #phi = phiNew.copy()
+        phiOld_ctcs = phi_ctcs.copy()
+        phi_ctcs = phiNew_ctcs.copy()
         
     #derived quantities
     u = 1
@@ -69,7 +74,9 @@ def main():
     
     #Plot the solution in comparison to the analyic solution
     plt. plot(x, initialBell(x-u*t), 'k', label = 'analytic')
-    plt. plot(x, phi, 'b', label='CTCS')
+    plt. plot(x, phi_ftcs, 'b', label='FTCS')
+    plt. plot(x, phi_ftbs, 'r', label='FTBS')
+    plt. plot(x, phi_ctcs, 'g', label='CTCS')
     plt.legend(loc='best')
     plt.ylabel('$\phi$')
     plt.axhline(0, linestyle=':', color='black')
